@@ -41,6 +41,16 @@ impl Tetromino {
     pub fn y(&self) -> usize {
         self.y
     }
+
+    pub fn move_by(&mut self, dx: isize, dy: isize) {
+        let new_x = self.x as isize + dx;
+        let new_y = self.y as isize + dy;
+
+        if new_x >= 0 && new_y >= 0 {
+            self.x = new_x as usize;
+            self.y = new_y as usize;
+        }
+    }
 }
 
 impl TetrominoShape {

@@ -1,5 +1,7 @@
 mod application;
 
+use std::thread;
+use std::time::Duration;
 use crate::application::board::Board;
 use crate::application::tetromino::Tetromino;
 use crate::application::tetromino::TetrominoKind;
@@ -7,7 +9,10 @@ use crate::application::tetromino::TetrominoKind;
 fn main() {
     let mut board = Board::new(10, 6);
 
-    board.setTetromino(Tetromino::new(TetrominoKind::T, 3, 3)).unwrap();
+    loop {
 
-    board.render();
+        
+
+        thread::sleep(Duration::from_millis(500));
+    }
 }
