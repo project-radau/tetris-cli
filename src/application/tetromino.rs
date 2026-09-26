@@ -1,4 +1,5 @@
-enum TetrominoKind {
+#[derive(Copy, Clone)]
+pub enum TetrominoKind {
     I,
     O,
     T,
@@ -14,7 +15,7 @@ pub struct Tetromino {
     y: usize
 }
 
-struct TetrominoShape {
+pub struct TetrominoShape {
     width: usize,
     height: usize,
     cells: Vec<bool>,
@@ -28,6 +29,18 @@ impl Tetromino {
             y
         }
     }
+
+    pub fn kind(&self) -> TetrominoKind {
+        self.kind
+    }
+
+    pub fn x(&self) -> usize {
+        self.x
+    }
+
+    pub fn y(&self) -> usize {
+        self.y
+    }
 }
 
 impl TetrominoShape {
@@ -38,10 +51,22 @@ impl TetrominoShape {
             cells
         }
     }
+
+    pub fn height(&self) -> usize {
+        self.height
+    }
+
+    pub fn width(&self) -> usize {
+        self.width
+    }
+
+    pub fn cells(&self) -> &Vec<bool> {
+        &self.cells
+    }
 }
 
 impl TetrominoKind {
-    fn shape(&self) -> TetrominoShape {
+    pub fn shape(&self) -> TetrominoShape {
         match self {
             TetrominoKind::I => {
                 TetrominoShape::new(
