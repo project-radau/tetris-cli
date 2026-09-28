@@ -14,7 +14,7 @@ impl TetrominoFactory {
         }
     }
 
-    fn getRandomTetrominoKind() -> TetrominoKind {
+    fn get_random_tetromino_kind() -> TetrominoKind {
         match rand::random_range(0..7){
              0 => {
                 TetrominoKind::I
@@ -42,7 +42,7 @@ impl TetrominoFactory {
     }
 
     pub fn spawn(&self) -> Tetromino {
-        let kind = TetrominoFactory::getRandomTetrominoKind();
+        let kind = TetrominoFactory::get_random_tetromino_kind();
         let shape = kind.shape();
         let spawn_position = (self.width / 2) - (shape.width() / 2);
         Tetromino::new(kind, spawn_position, 0)

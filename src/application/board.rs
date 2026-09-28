@@ -73,14 +73,16 @@ impl Board {
         //check for collision
         for height_index in 0..shape.height() {
             for width_index in 0..shape.width() {
-                match self.get(tetromino.x() + width_index, tetromino.y() + height_index) {
-                    Some(cell) => {
-                        if cell {
-                            return Err("collision detected".to_string());
-                        }
-                    },
-                    None => { return Err("invalid tetromino position".to_string()); }
-                };
+                if shape.cells()[height_index * shape.width() + width_index] {
+                    match self.get(tetromino.x() + width_index, tetromino.y() + height_index) {
+                        Some(cell) => {
+                            if cell {
+                                return Err("collision detected".to_string());
+                            }
+                        },
+                        None => { return Err("invalid tetromino position".to_string()); }
+                    };
+                }
             }
         }
 
