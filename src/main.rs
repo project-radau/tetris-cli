@@ -60,6 +60,15 @@ fn main() {
                                     Err(_) => {}
                                 }
                             },
+                            KeyCode::Char(' ') => {
+                                match board.rotate_tetromino(&mut tetromino) {
+                                    Ok(()) => {
+                                        last_input = Instant::now();
+                                        needs_render = true;
+                                    },
+                                    Err(_) => {}
+                                }
+                            }
                             _ => {}
                         }
                         

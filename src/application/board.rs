@@ -63,7 +63,7 @@ impl Board {
     }
 
     pub fn setTetromino(&mut self, tetromino: &Tetromino) -> Result<(), String> {
-        let shape = tetromino.kind().shape();
+        let shape = tetromino.kind().shape(tetromino.rotation_state());
 
         if  tetromino.x() + shape.width() > self.width ||
             tetromino.y() + shape.height() > self.height {
@@ -102,7 +102,7 @@ impl Board {
     }
 
     pub fn removeTetromino(&mut self, tetromino: &Tetromino) -> Result<(), String> {
-        let shape = tetromino.kind().shape();
+        let shape = tetromino.kind().shape(tetromino.rotation_state());
 
         if  tetromino.x() + shape.width() > self.width ||
             tetromino.y() + shape.height() > self.height {
@@ -157,5 +157,19 @@ impl Board {
                 Err(error)
             }
         }  
+    }
+
+    pub fn rotate_tetromino(&mut self, tetromino: &mut Tetromino) -> Result<(), String> {
+        self.removeTetromino(tetromino)?;
+        tetromino.rotate();
+
+        match self.setTetromino(tetromino) {
+            Ok(()) => Ok(()),
+            Err(error) => {
+                tetromino.rotateBack();
+                self.setTetromino(tetromino);
+                Err(error)
+            }
+        }
     }
 }

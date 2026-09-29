@@ -43,7 +43,7 @@ impl TetrominoFactory {
 
     pub fn spawn(&self) -> Tetromino {
         let kind = TetrominoFactory::get_random_tetromino_kind();
-        let shape = kind.shape();
+        let shape = kind.shape(0);
         let spawn_position = (self.width / 2) - (shape.width() / 2);
         Tetromino::new(kind, spawn_position, 0)
     }
