@@ -62,6 +62,38 @@ impl Board {
         }
     }
 
+    pub fn is_row_full(&self, y: usize) -> bool {
+        for index in (y * self.width)..(y * self.width + self.width) {
+            if self.cells[index] == false {
+                return false;
+            }
+        }
+        true
+    }
+
+    pub fn clear_full_rows(&mut self) -> usize {
+        let mut cleared_rows = 0;
+
+        let mut y = self.height();
+
+        while y > 0 {
+            y -= 1;
+            if self.is_row_full(y) {
+                for index in (self.width()..((y + 1) * self.width())).rev() {
+                    self.cells[index] = self.cells[index - self.width()];
+                }
+
+                for index in 0..self.width() {
+                    self.cells[index] = false;
+                }
+
+                cleared_rows += 1;
+            }
+        }
+
+        cleared_rows
+    }
+
     pub fn setTetromino(&mut self, tetromino: &Tetromino) -> Result<(), String> {
         let shape = tetromino.kind().shape(tetromino.rotation_state());
 
@@ -153,7 +185,7 @@ impl Board {
             Ok(()) => Ok(()),
             Err(error) => {
                 tetromino.move_by(-dx,-dy);
-                self.setTetromino(&tetromino);
+                self.setTetromino(&tetromino); 
                 Err(error)
             }
         }  

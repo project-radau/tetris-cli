@@ -81,6 +81,12 @@ fn main() {
         if last_fall.elapsed() >= Duration::from_millis(200) {
             match board.move_tetromino(&mut tetromino, 0, 1) {
                 Err(_) => {
+                    let cleared_rows = board.clear_full_rows();
+
+                    if cleared_rows > 0 {
+                        needs_render = true;
+                    }
+
                     tetromino = factory.spawn();
                     match board.setTetromino(&tetromino) {
                         Ok(()) => { needs_render = true; }
