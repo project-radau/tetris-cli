@@ -14,12 +14,14 @@ use crossterm::event;
 use crossterm::event::KeyCode;
 
 fn main() {
+    const DAS_DELAY: Duration = Duration::from_millis(266);
+
     let mut start_level: usize = 0;
     let mut run = true;
 
     while run {
         let mut input = String::new();
-        
+
         println!("Startlevel (0-29)?");
         std::io::stdin().read_line(&mut input).unwrap();
         
@@ -48,60 +50,99 @@ fn main() {
     render(&board, &game_state);
 
     let mut last_fall = Instant::now();
-    let mut last_input = Instant::now();
+    let mut last_das = Instant::now();
+    let mut last_arr = Instant::now();
     let mut needs_render: bool = false;
 
+    let mut left_held = false;
+    let mut right_held = false;
+
     loop {
+        
         if event::poll(Duration::from_millis(1)).unwrap() {
             let event = event::read().unwrap();
-
             match event {
                 event::Event::Key(key_event) => {
-                    if last_input.elapsed() >= Duration::from_millis(100) {
-                        match key_event.code {
-                            KeyCode::Left => {
-                                match board.move_tetromino(&mut tetromino, -1, 0) {
-                                    Ok(()) => {
-                                        last_input = Instant::now();
-                                        needs_render = true;
-                                    },
-                                    Err(_) => {}
+                    match key_event.kind {
+                        event::KeyEventKind::Press => {
+                            match key_event.code {
+                                KeyCode::Left => {
+                                    left_held = true;
+                                    match board.move_tetromino(&mut tetromino, -1, 0) {
+                                        Ok(()) => {
+                                            needs_render = true;
+                                        },
+                                        Err(_) => {}
+                                    }
+                                    last_das = Instant::now();
+                                },
+                                KeyCode::Right => {
+                                    right_held = true;
+                                    match board.move_tetromino(&mut tetromino, 1, 0) {
+                                        Ok(()) => {
+                                            needs_render = true;
+                                        },
+                                        Err(_) => {}
+                                    }
+                                    last_das = Instant::now();
+                                },
+                                KeyCode::Down => {
+                                    match board.move_tetromino(&mut tetromino, 0, 1) {
+                                        Ok(()) => {
+                                            needs_render = true;
+                                        },
+                                        Err(_) => {}
+                                    }
+                                },
+                                KeyCode::Char(' ') => {
+                                    match board.rotate_tetromino(&mut tetromino) {
+                                        Ok(()) => {
+                                            needs_render = true;
+                                        },
+                                        Err(_) => {}
+                                    }
                                 }
-                            },
-                            KeyCode::Right => {
-                                match board.move_tetromino(&mut tetromino, 1, 0) {
-                                    Ok(()) => {
-                                        last_input = Instant::now();
-                                        needs_render = true;
-                                    },
-                                    Err(_) => {}
-                                }
-                            },
-                            KeyCode::Down => {
-                                match board.move_tetromino(&mut tetromino, 0, 1) {
-                                    Ok(()) => {
-                                        last_input = Instant::now();
-                                        needs_render = true;
-                                    },
-                                    Err(_) => {}
-                                }
-                            },
-                            KeyCode::Char(' ') => {
-                                match board.rotate_tetromino(&mut tetromino) {
-                                    Ok(()) => {
-                                        last_input = Instant::now();
-                                        needs_render = true;
-                                    },
-                                    Err(_) => {}
-                                }
+                                _ => {}
                             }
-                            _ => {}
+                        },
+                        event::KeyEventKind::Release => {
+                            match key_event.code {
+                                KeyCode::Left => {
+                                    left_held = false;
+                                },
+                                KeyCode::Right => {
+                                    right_held = false;
+                                },
+                                _ => {}
+                            }
                         }
-                        
+                        _ => {}
                     }
                 }
                 _ => {}
             }
+        }
+
+        if left_held && last_das.elapsed() >= DAS_DELAY {
+            match board.move_tetromino(&mut tetromino, -1, 0) {
+                Ok(()) => {
+                    needs_render = true;
+                },
+                Err(_) => {}
+            }
+
+            last_das = Instant::now();
+        }
+
+        if right_held && last_das.elapsed() >= DAS_DELAY {
+            match board.move_tetromino(&mut tetromino, 1, 0) {
+                Ok(()) => {
+                    needs_render = true;
+                },
+                Err(_) => {}
+            }
+
+            last_das = Instant::now();
         }
 
         if last_fall.elapsed() >= game_state.fall_delay() {
