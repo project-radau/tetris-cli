@@ -45,11 +45,12 @@ fn main() {
     let mut board = Board::new(10, 20);
 
     let factory = TetrominoFactory::new(board.width(), board.height());
-    let mut tetromino = factory.spawn();
+    let mut current_tetromino = factory.spawn();
+    let mut next_tetromino  = factory.spawn();
 
-    board.setTetromino(&tetromino).unwrap();
+    board.setTetromino(&current_tetromino).unwrap();
 
-    render(&board, &game_state);
+    render(&board, &game_state, &next_tetromino);
 
     let mut last_fall = Instant::now();
     let mut last_das = Instant::now();
@@ -75,7 +76,7 @@ fn main() {
                                 KeyCode::Left => {
                                     left_held = true;
                                     das_finished = false;
-                                    match board.move_tetromino(&mut tetromino, -1, 0) {
+                                    match board.move_tetromino(&mut current_tetromino, -1, 0) {
                                         Ok(()) => {
                                             needs_render = true;
                                         },
@@ -85,7 +86,7 @@ fn main() {
                                 },
                                 KeyCode::Right => {
                                     right_held = true;
-                                    match board.move_tetromino(&mut tetromino, 1, 0) {
+                                    match board.move_tetromino(&mut current_tetromino, 1, 0) {
                                         Ok(()) => {
                                             needs_render = true;
                                         },
@@ -98,7 +99,7 @@ fn main() {
                                 },
                                 KeyCode::Char(' ') => {
                                     if last_rotation.elapsed() >= Duration::from_millis(ROTATION_DEBOUNCE_FRAMES * 1000 / 60) {
-                                        match board.rotate_tetromino(&mut tetromino) {
+                                        match board.rotate_tetromino(&mut current_tetromino) {
                                             Ok(()) => {
                                                 needs_render = true;
                                             },
@@ -133,7 +134,7 @@ fn main() {
 
         if left_held {
             if last_das.elapsed() >= DAS_DELAY {
-                match board.move_tetromino(&mut tetromino, -1, 0) {
+                match board.move_tetromino(&mut current_tetromino, -1, 0) {
                     Ok(()) => {
                         needs_render = true;
                     },
@@ -144,7 +145,7 @@ fn main() {
             }
 
             if das_finished && last_arr.elapsed() >= ARR_DELAY {
-                match board.move_tetromino(&mut tetromino, -1, 0) {
+                match board.move_tetromino(&mut current_tetromino, -1, 0) {
                     Ok(()) => {
                         needs_render = true;
                     },
@@ -156,7 +157,7 @@ fn main() {
 
         if right_held {
             if last_das.elapsed() >= DAS_DELAY {
-                match board.move_tetromino(&mut tetromino, 1, 0) {
+                match board.move_tetromino(&mut current_tetromino, 1, 0) {
                     Ok(()) => {
                         needs_render = true;
                     },
@@ -167,7 +168,7 @@ fn main() {
             }
 
             if das_finished && last_arr.elapsed() >= ARR_DELAY {
-                match board.move_tetromino(&mut tetromino, 1, 0) {
+                match board.move_tetromino(&mut current_tetromino, 1, 0) {
                     Ok(()) => {
                         needs_render = true;
                     },
@@ -184,7 +185,7 @@ fn main() {
         };
 
         if last_fall.elapsed() >= fall_delay {
-            match board.move_tetromino(&mut tetromino, 0, 1) {
+            match board.move_tetromino(&mut current_tetromino, 0, 1) {
                 Err(_) => {
                     let cleared_rows = board.clear_full_rows();
 
@@ -193,8 +194,9 @@ fn main() {
                         needs_render = true;
                     }
 
-                    tetromino = factory.spawn();
-                    match board.setTetromino(&tetromino) {
+                    current_tetromino = next_tetromino;
+                    next_tetromino = factory.spawn();
+                    match board.setTetromino(&current_tetromino) {
                         Ok(()) => { needs_render = true; }
                         Err(_) => {
                             println!("game over!");
@@ -207,15 +209,55 @@ fn main() {
             last_fall = Instant::now();
         }
         if needs_render {
-            render(&board, &game_state);
+            render(&board, &game_state, &next_tetromino);
             needs_render = false;
         }
     }
 }
 
-fn render(board: &Board, game_state: &GameState) {
+fn render(board: &Board, game_state: &GameState, next_tetromino: &Tetromino) {
+    crossterm::execute!(
+        std::io::stdout(),
+        crossterm::cursor::Hide
+    ).unwrap();
+
+    render_board(board);
+    render_stats(board, game_state);
+    render_next_piece(board, next_tetromino);
+
+    std::io::stdout().flush().unwrap();
+}
+
+fn render_board(board: &Board) {
     //clear terminal
     print!("\x1B[2J\x1B[H");
     std::io::stdout().flush().unwrap();
-    board.render(game_state);
+    board.render();
+}
+
+fn render_stats(board: &Board, game_state: &GameState) {
+    let x = board.width() + 3;
+    let y = 0;
+
+    game_state.render(x as u16, y as u16);
+}
+
+fn render_next_piece(board: &Board, tetromino: &Tetromino) {
+    let x = board.width() + 3;
+    let y = 5;
+
+    crossterm::execute!(std::io::stdout(), crossterm::cursor::MoveTo(x as u16, y as u16)).unwrap();
+    let shape = tetromino.kind().shape(tetromino.rotation_state());
+
+    for index_y in 0..shape.height() {
+        crossterm::execute!(std::io::stdout(), crossterm::cursor::MoveTo(x as u16, (y + index_y) as u16)).unwrap();
+        for index_x in 0..shape.width() {
+            if shape.cells()[index_y * shape.width() + index_x] {
+                print!("#");
+            }
+            else {
+                print!(" ");
+            }
+        }
+    }
 }

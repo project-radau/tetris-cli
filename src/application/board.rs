@@ -32,13 +32,7 @@ impl Board {
         Some(y * self.width + x)
     }
 
-    pub fn render(&self, game_state: &GameState) {
-
-        println!("Level: {}", game_state.level());
-        println!("Score: {}", game_state.score());
-        print!("\n");
-        print!("\n");
-
+    pub fn render(&self) {
         for y in 0..self.height {
             for x in 0..self.width {
                 if self.cells[y * self.width + x] {

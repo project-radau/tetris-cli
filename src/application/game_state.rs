@@ -47,4 +47,13 @@ impl GameState {
 
         Duration::from_millis(frames * 1000 / 60)
     }
+
+    pub fn render(&self, x: u16, y: u16) {
+        crossterm::execute!(std::io::stdout(), crossterm::cursor::MoveTo(x, y)).unwrap();
+        print!("Score: {}", self.score);
+        crossterm::execute!(std::io::stdout(), crossterm::cursor::MoveTo(x, y+1)).unwrap();
+        println!("Level: {}", self.level);
+        crossterm::execute!(std::io::stdout(), crossterm::cursor::MoveTo(x, y+2)).unwrap();
+        println!("Lines: {}", self.lines_cleared);
+    }
 }
