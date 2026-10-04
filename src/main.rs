@@ -18,6 +18,7 @@ fn main() {
     const ARR_DELAY: Duration = Duration::from_millis(100);
     const ROTATION_DEBOUNCE_FRAMES: u64 = 6;
     const LOCK_DELAY_FRAMES: u64 = 6;
+    const HARD_DROP_DEBOUNCE_FRAMES: u64 = 6;
 
     let mut start_level: usize = 0;
     let mut run = true;
@@ -58,6 +59,8 @@ fn main() {
     let mut last_arr = Instant::now();
     let mut last_rotation = Instant::now();
     let mut last_lock_delay = Instant::now();
+    let mut last_hard_drop = Instant::now();
+
     let mut das_finished = false;
     let mut needs_render: bool = false;
 
@@ -109,6 +112,35 @@ fn main() {
                                             Err(_) => {}
                                         }
                                         last_rotation = Instant::now();
+                                    }
+                                },
+                                KeyCode::Tab => {
+                                    if last_hard_drop.elapsed() >= Duration::from_millis(HARD_DROP_DEBOUNCE_FRAMES * 1000 / 60) {
+                                        board.hard_drop_tetromino(&mut current_tetromino);
+
+                                        let cleared_rows = board.clear_full_rows();
+
+                                        if cleared_rows > 0 {
+                                            game_state.add_score(cleared_rows);
+                                        }
+                                        
+                                        current_tetromino = next_tetromino;
+                                        next_tetromino = factory.spawn();
+
+                                        match board.setTetromino(&current_tetromino) {
+                                            Ok(()) => {
+                                                lock_delay_active = false;
+                                                last_fall = Instant::now();
+                                                last_lock_delay = Instant::now();
+                                                last_hard_drop = Instant::now();
+                                                needs_render = true;
+                                            }
+
+                                            Err(_) => {
+                                                println!("game over!");
+                                                return;
+                                            }
+                                        }
                                     }
                                 }
                                 _ => {}

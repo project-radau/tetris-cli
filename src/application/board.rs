@@ -205,4 +205,15 @@ impl Board {
             }
         }
     }
+
+    pub fn hard_drop_tetromino(&mut self, tetromino: &mut Tetromino) {
+        loop {
+            match self.move_tetromino(tetromino, 0, 1) {
+                Ok(()) => { }
+                Err(_) => {
+                    return;
+                }
+            }
+        }
+    }
 }
