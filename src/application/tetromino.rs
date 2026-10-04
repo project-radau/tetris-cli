@@ -13,15 +13,15 @@ pub enum TetrominoKind {
 
 pub struct Tetromino {
     kind: TetrominoKind,
-    x: usize,
-    y: usize,
+    x: isize,
+    y: isize,
     rotation_state: u8
 }
 
 pub struct TetrominoShape {
     width: usize,
     height: usize,
-    cells: Vec<bool>,
+    cells: Vec<bool>
 }
 
 pub struct TetrominoBag {
@@ -29,7 +29,7 @@ pub struct TetrominoBag {
 }
 
 impl Tetromino {
-    pub fn new(kind: TetrominoKind, x: usize, y: usize) -> Self {
+    pub fn new(kind: TetrominoKind, x: isize, y: isize) -> Self {
         Self {
             kind,
             x,
@@ -42,11 +42,11 @@ impl Tetromino {
         self.kind
     }
 
-    pub fn x(&self) -> usize {
+    pub fn x(&self) -> isize {
         self.x
     }
 
-    pub fn y(&self) -> usize {
+    pub fn y(&self) -> isize {
         self.y
     }
 
@@ -55,13 +55,8 @@ impl Tetromino {
     }
 
     pub fn move_by(&mut self, dx: isize, dy: isize) {
-        let new_x = self.x as isize + dx;
-        let new_y = self.y as isize + dy;
-
-        if new_x >= 0 && new_y >= 0 {
-            self.x = new_x as usize;
-            self.y = new_y as usize;
-        }
+        self.x += dx;
+        self.y += dy;
     }
 
     pub fn rotate(&mut self) {
@@ -93,6 +88,117 @@ impl TetrominoShape {
     pub fn cells(&self) -> &Vec<bool> {
         &self.cells
     }
+
+    fn rotate_shape_3x3(cells: Vec<bool>, pivot_x: usize, pivot_y: usize, amount_rotations: u8) -> Vec<bool> {
+        let width = 3;
+        let height = 3;
+        let mut current_matrix = cells;
+
+        let real_amount_rotations = amount_rotations % 4;
+
+        for _ in 0..real_amount_rotations {
+            let mut rotated_matrix = vec![false; width * height];
+
+            for index_y in 0..height {
+                for index_x in 0..width {
+                    let base_index = index_y * width + index_x;
+                    if current_matrix[base_index] {
+                        let rotation_index_x = pivot_x as isize - (index_y as isize - pivot_y as isize);
+                        let rotation_index_y = pivot_y as isize + (index_x as isize - pivot_x as isize);
+                        let rotation_index = rotation_index_y * width as isize + rotation_index_x;
+                        rotated_matrix[rotation_index as usize] = true;
+                    }
+                }
+            }
+            current_matrix = rotated_matrix;
+        }
+        
+        current_matrix
+    }
+
+    // parameters pivot_x and pivot_y must be doubled
+    fn rotate_shape_4x4(cells: Vec<bool>, pivot_x: isize, pivot_y: isize, amount_rotations: u8) -> Vec<bool> {
+        let width = 4;
+        let height = 4;
+        let mut current_matrix = cells;
+
+        let real_amount_rotations = amount_rotations % 4;
+
+        for _ in 0..real_amount_rotations {
+            let mut rotated_matrix = vec![false; width * height];
+
+            for index_y in 0..height {
+                for index_x in 0..width {
+                    let base_index = index_y * width + index_x;
+                    if current_matrix[base_index] {
+                        let rotation_index_x = (pivot_x as isize - (2 * index_y as isize - pivot_y as isize)) / 2;
+                        let rotation_index_y = (pivot_y as isize + (2 * index_x as isize - pivot_x as isize)) / 2;
+                        let rotation_index = rotation_index_y * width as isize + rotation_index_x;
+                        rotated_matrix[rotation_index as usize] = true;
+                    }
+                }
+            }
+            current_matrix = rotated_matrix;
+        }
+        
+        current_matrix
+    }
+
+    pub fn leading_empty_columns(&self) -> usize {
+        let mut ret: usize = 0;
+        for index_x in 0..self.width() {
+            for index_y in 0..self.height() {
+                let cell_index = index_y * self.width + index_x;
+                if self.cells()[cell_index] {
+                    return ret;
+                }
+            }
+            ret += 1;
+        }
+        ret
+    }
+
+    pub fn trailing_empty_columns(&self) -> usize {
+        let mut ret: usize = 0;
+        for index_x in (0..self.width()).rev() {
+            for index_y in 0..self.height() {
+                let cell_index = index_y * self.width + index_x;
+                if self.cells()[cell_index] {
+                    return ret;
+                }
+            }
+            ret += 1;
+        }
+        ret
+    }
+
+    pub fn leading_empty_rows(&self) -> usize {
+        let mut ret: usize = 0;
+        for index_y in 0..self.height() {
+            for index_x in 0..self.width() {
+                let cell_index = index_y * self.width + index_x;
+                if self.cells()[cell_index] {
+                    return ret;
+                }
+            }
+            ret += 1;
+        }
+        ret
+    }
+
+    pub fn trailing_empty_rows(&self) -> usize {
+        let mut ret: usize = 0;
+        for index_y in (0..self.height()).rev() {
+            for index_x in 0..self.width() {
+                let cell_index = index_y * self.width + index_x;
+                if self.cells()[cell_index] {
+                    return ret;
+                }
+            }
+            ret += 1;
+        }
+        ret
+    }
 }
 
 impl TetrominoKind {
@@ -104,51 +210,20 @@ impl TetrominoKind {
         
         match self {
             TetrominoKind::I => {
-                match rotation_state {
-                    0 => {
-                        TetrominoShape::new(
-                            1, 
-                            4,
-                            vec![
-                                true,
-                                true,
-                                true,
-                                true
-                            ]
-                        )
-                    },
-                    1 => {
-                        TetrominoShape::new(
-                            4, 
-                            1,
-                            vec![
-                                true, true, true, true
-                            ]
-                        )
-                    },
-                    2 => {
-                        TetrominoShape::new(
-                            1, 
-                            4,
-                            vec![
-                                true, 
-                                true, 
-                                true, 
-                                true
-                            ]
-                        )
-                    },
-                    3 => {
-                        TetrominoShape::new(
-                            4, 
-                            1,
-                            vec![
-                                true, true, true, true
-                            ]
-                        )
-                    },
-                    _ => panic!("invalid rotation")
-                }
+                let base_shape = vec![
+                    false, true, false, false,
+                    false, true, false, false,
+                    false, true, false, false,
+                    false, true, false, false
+                ];
+                //doubled, actually it's 1.5
+                let pivot_x = 3;
+                let pivot_y = 3;
+                TetrominoShape::new(
+                    4,
+                    4,
+                    TetrominoShape::rotate_shape_4x4(base_shape, pivot_x, pivot_y, rotation_state)
+                )
             },
             TetrominoKind::O => {
                 TetrominoShape::new(
@@ -161,243 +236,79 @@ impl TetrominoKind {
                 )
             }
             TetrominoKind::T => {
-                match rotation_state {
-                    0 => {
-                        TetrominoShape::new(
-                            3,
-                            2,
-                            vec![
-                                true, true, true,
-                                false, true, false
-                            ]
-                        )
-                    },
-                    1 => {
-                        TetrominoShape::new(
-                            2,
-                            3,
-                            vec![
-                                false, true, 
-                                true, true, 
-                                false, true
-                            ]
-                        )
-                    },
-                    2 => {
-                        TetrominoShape::new(
-                            3,
-                            2,
-                            vec![
-                                false, true, false,
-                                true, true, true
-                            ]
-                        )
-                    },
-                    3 => {
-                        TetrominoShape::new(
-                            2,
-                            3,
-                            vec![
-                                true, false, 
-                                true, true, 
-                                true, false
-                            ]
-                        )
-                    },
-                    _ => panic!("invalid rotation")
-                }
+                let base_shape = vec![
+                    false, false, false,
+                    true, true, true,
+                    false, true, false
+                ];
+                let pivot_x = 1;
+                let pivot_y = 1;
+                TetrominoShape::new(
+                    3,
+                    3,
+                    TetrominoShape::rotate_shape_3x3(base_shape, pivot_x, pivot_y, rotation_state)
+                )
             }
             TetrominoKind::S => {
-                match rotation_state {
-                    0 => {
-                        TetrominoShape::new(
-                            3,
-                            2,
-                            vec![
-                                false, true, true,
-                                true, true, false
-                            ]
-                        )
-                    },
-                    1 => {
-                        TetrominoShape::new(
-                            2,
-                            3,
-                            vec![
-                                true, false,
-                                true, true,
-                                false, true
-                            ]
-                        )
-                    },
-                    2 => {
-                        TetrominoShape::new(
-                            3,
-                            2,
-                            vec![
-                                false, true, true,
-                                true, true, false
-                            ]
-                        )
-                    },
-                    3 => {
-                        TetrominoShape::new(
-                            2,
-                            3,
-                            vec![
-                                true, false,
-                                true, true,
-                                false, true
-                            ]
-                        )
-                    },
-                    _ => panic!("invalid rotation")
-                }
+                let base_shape = vec![
+                    false, false, false,
+                    false, true, true,
+                    true, true, false
+                ];
+                let pivot_x = 1;
+                let pivot_y = 1;
+                TetrominoShape::new(
+                    3,
+                    3,
+                    TetrominoShape::rotate_shape_3x3(base_shape, pivot_x, pivot_y, rotation_state)
+                )
             }
             TetrominoKind::Z => {
-                match rotation_state {
-                    0 => {
-                        TetrominoShape::new(
-                            3,
-                            2,
-                            vec![
-                                true, true, false,
-                                false, true, true
-                            ]
-                        )
-                    },
-                    1 => {
-                        TetrominoShape::new(
-                            2,
-                            3,
-                            vec![
-                                false, true,
-                                true, true,
-                                true, false
-                            ]
-                        )
-                    },
-                    2 => {
-                        TetrominoShape::new(
-                            3,
-                            2,
-                            vec![
-                                true, true, false,
-                                false, true, true
-                            ]
-                        )
-                    },
-                    3 => {
-                        TetrominoShape::new(
-                            2,
-                            3,
-                            vec![
-                                false, true,
-                                true, true,
-                                true, false
-                            ]
-                        )
-                    },
-                    _ => panic!("invalid rotation")
-                }
+                let base_shape = vec![
+                    false, false, false,
+                    true, true, false,
+                    false, true, true
+                ];
+                let pivot_x = 1;
+                let pivot_y = 1;
+                TetrominoShape::new(
+                    3,
+                    3,
+                    TetrominoShape::rotate_shape_3x3(base_shape, pivot_x, pivot_y, rotation_state)
+                )
             }
             TetrominoKind::J => {
-                match rotation_state {
-                    0 => {
-                        TetrominoShape::new(
-                            2,
-                            3,
-                            vec![
-                                false, true,
-                                false, true,
-                                true, true
-                            ]
-                        )
-                    },
-                    1 => {
-                        TetrominoShape::new(
-                            3,
-                            2,
-                            vec![
-                                true, false, false,
-                                true, true, true
-                            ]
-                        )
-                    },
-                    2 => {
-                        TetrominoShape::new(
-                            2,
-                            3,
-                            vec![
-                                true, true,
-                                true, false,
-                                true, false
-                            ]
-                        )
-                    },
-                    3 => {
-                        TetrominoShape::new(
-                            3,
-                            2,
-                            vec![
-                                true, true, true,
-                                false, false, true
-                            ]
-                        )
-                    },
-                    _ => panic!("invalid rotation")
-                }
+                let base_shape = vec![
+                    false, true, false,
+                    false, true, false,
+                    true, true, false
+                ];
+                let pivot_x = 1;
+                let pivot_y = 1;
+                TetrominoShape::new(
+                    3,
+                    3,
+                    TetrominoShape::rotate_shape_3x3(base_shape, pivot_x, pivot_y, rotation_state)
+                )
             }
             TetrominoKind::L => {
-                match rotation_state {
-                    0 => {
-                        TetrominoShape::new(
-                            2,
-                            3,
-                            vec![
-                                true, false,
-                                true, false,
-                                true, true
-                            ]
-                        )
-                    },
-                    1 => {
-                        TetrominoShape::new(
-                            3,
-                            2,
-                            vec![
-                                true, true, true,
-                                true, false, false
-                            ]
-                        )
-                    },
-                    2 => {
-                        TetrominoShape::new(
-                            2,
-                            3,
-                            vec![
-                                true, true,
-                                false, true,
-                                false, true
-                            ]
-                        )
-                    },
-                    3 => {
-                        TetrominoShape::new(
-                            3,
-                            2,
-                            vec![
-                                false, false, true,
-                                true, true, true
-                            ]
-                        )
-                    },
-                    _ => panic!("invalid rotation")
-                }
+                let base_shape = vec![
+                    false, true, false,
+                    false, true, false,
+                    false, true, true
+                ];
+                let pivot_x = 1;
+                let pivot_y = 1;
+                TetrominoShape::new(
+                    3,
+                    3,
+                    TetrominoShape::rotate_shape_3x3(base_shape, pivot_x, pivot_y, rotation_state)
+                )
             }
         }
     }
 }
+
 
 impl TetrominoBag {
     fn get_random_tetromino_kind_bag_items() -> Vec<TetrominoKind> {

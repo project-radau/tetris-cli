@@ -98,37 +98,44 @@ impl Board {
     pub fn setTetromino(&mut self, tetromino: &Tetromino) -> Result<(), String> {
         let shape = tetromino.kind().shape(tetromino.rotation_state());
 
-        if  tetromino.x() + shape.width() > self.width ||
-            tetromino.y() + shape.height() > self.height {
-            return Err("invalid tetromino position".to_string());
-        }
+        let leading_empty_columns = shape.leading_empty_columns();
+        let trailing_empty_columns = shape.trailing_empty_columns();
+        let leading_empty_rows = shape.leading_empty_rows();
+        let trailing_empty_rows = shape.trailing_empty_rows();
 
         //check for collision
-        for height_index in 0..shape.height() {
-            for width_index in 0..shape.width() {
+        for height_index in leading_empty_rows..(shape.height() - trailing_empty_rows) {
+            for width_index in leading_empty_columns..(shape.width() - trailing_empty_columns) {
                 if shape.cells()[height_index * shape.width() + width_index] {
-                    match self.get(tetromino.x() + width_index, tetromino.y() + height_index) {
-                        Some(cell) => {
-                            if cell {
-                                return Err("collision detected".to_string());
-                            }
-                        },
-                        None => { return Err("invalid tetromino position".to_string()); }
-                    };
+                    let board_x = tetromino.x() + width_index as isize - leading_empty_columns as isize;
+                    let board_y = tetromino.y() + height_index as isize - leading_empty_rows as isize;
+                    if board_x < 0
+                        || board_y < 0
+                        || board_x >= self.width as isize
+                        || board_y >= self.height as isize
+                    {
+                        return Err("invalid tetromino position".to_string());
+                    }
+                    else {
+                        if self.cells[(board_y * self.width() as isize + board_x) as usize] {
+                            return Err("collision detected".to_string());
+                        }
+                    }
                 }
             }
         }
 
-        let mut start = tetromino.y() * self.width + tetromino.x();
-
-        for height_index in 0..shape.height() {
-            for width_index in 0..shape.width() {
+        for height_index in leading_empty_rows..(shape.height() - trailing_empty_rows) {
+            for width_index in leading_empty_columns..(shape.width() - trailing_empty_columns) {
                 let shape_cell = shape.cells()[height_index * shape.width() + width_index];
                 if shape_cell {
-                    self.cells[start + width_index] = true;
+                    let board_x = tetromino.x() + width_index as isize - leading_empty_columns as isize;
+                    let board_y = tetromino.y() + height_index as isize - leading_empty_rows as isize;
+                    let board_index = board_y * self.width as isize + board_x;
+
+                    self.cells[board_index as usize] = true;
                 }
             }
-            start = start + self.width;
         }
 
         Ok(())
@@ -137,37 +144,44 @@ impl Board {
     pub fn removeTetromino(&mut self, tetromino: &Tetromino) -> Result<(), String> {
         let shape = tetromino.kind().shape(tetromino.rotation_state());
 
-        if  tetromino.x() + shape.width() > self.width ||
-            tetromino.y() + shape.height() > self.height {
-            return Err("invalid tetromino position".to_string());
-        }
+        let leading_empty_columns = shape.leading_empty_columns();
+        let trailing_empty_columns = shape.trailing_empty_columns();
+        let leading_empty_rows = shape.leading_empty_rows();
+        let trailing_empty_rows = shape.trailing_empty_rows();
 
         //check for collision
-        for height_index in 0..shape.height() {
-            for width_index in 0..shape.width() {
+        for height_index in leading_empty_rows..(shape.height() - trailing_empty_rows) {
+            for width_index in leading_empty_columns..(shape.width() - trailing_empty_columns) {
                 if shape.cells()[height_index * shape.width() + width_index] {
-                    match self.get(tetromino.x() + width_index, tetromino.y() + height_index) {
-                        Some(cell) => {
-                            if !cell {
-                                return Err("no tetromino found".to_string());
-                            }
-                        },
-                        None => { return Err("invalid tetromino position".to_string()); }
-                    };
+                    let board_x = tetromino.x() + width_index as isize - leading_empty_columns as isize;
+                    let board_y = tetromino.y() + height_index as isize - leading_empty_rows as isize;
+                    if board_x < 0
+                        || board_y < 0
+                        || board_x >= self.width as isize
+                        || board_y >= self.height as isize
+                    {
+                        return Err("invalid tetromino position".to_string());
+                    }
+                    else {
+                        if !self.cells[(board_y * self.width() as isize + board_x) as usize] {
+                            return Err("no tetromino found".to_string());
+                        }
+                    }
                 }
             }
         }
 
-        let mut start = tetromino.y() * self.width + tetromino.x();
-
-        for height_index in 0..shape.height() {
-            for width_index in 0..shape.width() {
+        for height_index in leading_empty_rows..(shape.height() - trailing_empty_rows) {
+            for width_index in leading_empty_columns..(shape.width() - trailing_empty_columns) {
                 let shape_cell = shape.cells()[height_index * shape.width() + width_index];
                 if shape_cell {
-                    self.cells[start + width_index] = false;
+                    let board_x = tetromino.x() + width_index as isize - leading_empty_columns as isize;
+                    let board_y = tetromino.y() + height_index as isize - leading_empty_rows as isize;
+                    let board_index = board_y * self.width as isize + board_x;
+
+                    self.cells[board_index as usize] = false;
                 }
             }
-            start = start + self.width;
         }
 
         Ok(())

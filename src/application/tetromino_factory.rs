@@ -21,7 +21,7 @@ impl TetrominoFactory {
         let kind = self.bag.next();
         let shape = kind.shape(0);
         let spawn_position = (self.width / 2) - (shape.width() / 2);
-        Tetromino::new(kind, spawn_position, 0)
+        Tetromino::new(kind, spawn_position as isize, 0)
     }
     
 }
