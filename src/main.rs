@@ -46,7 +46,7 @@ fn main() {
     let mut game_state = GameState::new(start_level);
     let mut board = Board::new(10, 20);
 
-    let factory = TetrominoFactory::new(board.width(), board.height());
+    let mut factory = TetrominoFactory::new(board.width(), board.height());
     let mut current_tetromino = factory.spawn();
     let mut next_tetromino  = factory.spawn();
 

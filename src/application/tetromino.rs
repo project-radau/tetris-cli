@@ -1,3 +1,5 @@
+use rand::seq::SliceRandom;
+
 #[derive(Copy, Clone)]
 pub enum TetrominoKind {
     I,
@@ -20,6 +22,10 @@ pub struct TetrominoShape {
     width: usize,
     height: usize,
     cells: Vec<bool>,
+}
+
+pub struct TetrominoBag {
+    items: Vec<TetrominoKind>
 }
 
 impl Tetromino {
@@ -388,6 +394,34 @@ impl TetrominoKind {
                     },
                     _ => panic!("invalid rotation")
                 }
+            }
+        }
+    }
+}
+
+impl TetrominoBag {
+    fn get_random_tetromino_kind_bag_items() -> Vec<TetrominoKind> {
+        let mut rng = rand::rng();
+        let mut items = vec![TetrominoKind::I, TetrominoKind::O, TetrominoKind::T, TetrominoKind::S, TetrominoKind::Z, TetrominoKind::J, TetrominoKind::L];
+        items.shuffle(&mut rng);
+        items
+    }
+
+    pub fn new() -> Self {
+        Self {
+            items: TetrominoBag::get_random_tetromino_kind_bag_items()
+        }
+    }
+
+    pub fn next(&mut self) -> TetrominoKind {
+        match self.items.pop() {
+            Some(item) => {
+                item
+            }
+            None => {
+                self.items = TetrominoBag::get_random_tetromino_kind_bag_items();
+                let item = self.items.pop().unwrap();
+                item
             }
         }
     }
