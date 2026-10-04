@@ -17,6 +17,7 @@ fn main() {
     const DAS_DELAY: Duration = Duration::from_millis(266);
     const ARR_DELAY: Duration = Duration::from_millis(100);
     const ROTATION_DEBOUNCE_FRAMES: u64 = 6;
+    const LOCK_DELAY_FRAMES: u64 = 6;
 
     let mut start_level: usize = 0;
     let mut run = true;
@@ -56,6 +57,7 @@ fn main() {
     let mut last_das = Instant::now();
     let mut last_arr = Instant::now();
     let mut last_rotation = Instant::now();
+    let mut last_lock_delay = Instant::now();
     let mut das_finished = false;
     let mut needs_render: bool = false;
 
@@ -64,6 +66,7 @@ fn main() {
 
     let mut down_held = false;
 
+    let mut lock_delay_active = false;
     loop {
         
         if event::poll(Duration::from_millis(1)).unwrap() {
@@ -187,20 +190,33 @@ fn main() {
         if last_fall.elapsed() >= fall_delay {
             match board.move_tetromino(&mut current_tetromino, 0, 1) {
                 Err(_) => {
-                    let cleared_rows = board.clear_full_rows();
 
-                    if cleared_rows > 0 {
-                        game_state.add_score(cleared_rows);
-                        needs_render = true;
+                    if lock_delay_active && last_lock_delay.elapsed() >= Duration::from_millis(LOCK_DELAY_FRAMES * 1000 / 60) {
+                        lock_delay_active = false;
+                        
+                        let cleared_rows = board.clear_full_rows();
+
+                        if cleared_rows > 0 {
+                            game_state.add_score(cleared_rows);
+                        }
+
+                        current_tetromino = next_tetromino;
+                        next_tetromino = factory.spawn();
+                        match board.setTetromino(&current_tetromino) {
+                            Ok(()) => { 
+                                lock_delay_active = false;
+                                needs_render = true;
+                            }
+                            Err(_) => {
+                                println!("game over!");
+                                return;
+                            }
+                        }
                     }
-
-                    current_tetromino = next_tetromino;
-                    next_tetromino = factory.spawn();
-                    match board.setTetromino(&current_tetromino) {
-                        Ok(()) => { needs_render = true; }
-                        Err(_) => {
-                            println!("game over!");
-                            return;
+                    else {
+                        if !lock_delay_active {
+                            lock_delay_active = true;
+                            last_lock_delay = Instant::now();
                         }
                     }
                 }
@@ -224,6 +240,8 @@ fn render(board: &Board, game_state: &GameState, next_tetromino: &Tetromino) {
     render_board(board);
     render_stats(board, game_state);
     render_next_piece(board, next_tetromino);
+
+    crossterm::execute!(std::io::stdout(), crossterm::cursor::MoveTo(0 as u16, (board.height() + 2) as u16)).unwrap();
 
     std::io::stdout().flush().unwrap();
 }
