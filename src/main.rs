@@ -1,13 +1,10 @@
 mod application;
 
 use std::time::Duration;
-use std::io;
 use std::io::Write;
 use std::time::Instant;
 use crate::application::board::Board;
-use crate::application::game_state;
 use crate::application::tetromino::Tetromino;
-use crate::application::tetromino::TetrominoKind;
 use crate::application::tetromino_factory::TetrominoFactory;
 use crate::application::game_state::GameState;
 use crossterm::event;
@@ -46,11 +43,11 @@ fn main() {
     let mut game_state = GameState::new(start_level);
     let mut board = Board::new(10, 20);
 
-    let mut factory = TetrominoFactory::new(board.width(), board.height());
+    let mut factory = TetrominoFactory::new(board.width());
     let mut current_tetromino = factory.spawn();
     let mut next_tetromino  = factory.spawn();
 
-    board.setTetromino(&current_tetromino).unwrap();
+    board.set_tetromino(&current_tetromino).unwrap();
 
     render(&board, &game_state, &next_tetromino);
 
@@ -127,7 +124,7 @@ fn main() {
                                         current_tetromino = next_tetromino;
                                         next_tetromino = factory.spawn();
 
-                                        match board.setTetromino(&current_tetromino) {
+                                        match board.set_tetromino(&current_tetromino) {
                                             Ok(()) => {
                                                 lock_delay_active = false;
                                                 last_fall = Instant::now();
@@ -224,8 +221,6 @@ fn main() {
                 Err(_) => {
 
                     if lock_delay_active && last_lock_delay.elapsed() >= Duration::from_millis(LOCK_DELAY_FRAMES * 1000 / 60) {
-                        lock_delay_active = false;
-                        
                         let cleared_rows = board.clear_full_rows();
 
                         if cleared_rows > 0 {
@@ -234,7 +229,7 @@ fn main() {
 
                         current_tetromino = next_tetromino;
                         next_tetromino = factory.spawn();
-                        match board.setTetromino(&current_tetromino) {
+                        match board.set_tetromino(&current_tetromino) {
                             Ok(()) => { 
                                 lock_delay_active = false;
                                 needs_render = true;

@@ -1,18 +1,15 @@
-use crate::TetrominoKind;
 use crate::Tetromino;
 use crate::application::tetromino::TetrominoBag;
 
 pub struct TetrominoFactory {
     width: usize,
-    height: usize,
     bag: TetrominoBag
 }
 
 impl TetrominoFactory {
-    pub fn new(width: usize, height: usize) -> Self {
+    pub fn new(width: usize) -> Self {
         Self {
             width,
-            height,
             bag: TetrominoBag::new()
         }
     }

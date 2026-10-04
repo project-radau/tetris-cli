@@ -15,14 +15,6 @@ impl GameState {
         }
     }
 
-    pub fn score(&self) -> usize {
-        self.score
-    }
-
-    pub fn level(&self) -> usize {
-        self.level
-    }
-
     pub fn add_score(&mut self, cleared_rows: usize) {
         self.lines_cleared += cleared_rows;
         self.level = self.lines_cleared / 10;

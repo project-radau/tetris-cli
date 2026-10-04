@@ -63,7 +63,7 @@ impl Tetromino {
         self.rotation_state = (self.rotation_state + 1) % 4;
     }
 
-    pub fn rotateBack(&mut self) {
+    pub fn rotate_back(&mut self) {
         self.rotation_state = (self.rotation_state + 3) % 4;
     }
 }

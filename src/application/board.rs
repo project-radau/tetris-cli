@@ -1,5 +1,4 @@
 use crate::application::tetromino::Tetromino;
-use crate::GameState;
 
 pub struct Board {
     width: usize,
@@ -24,14 +23,6 @@ impl Board {
         self.height
     }
 
-    fn index(&self, x: usize, y: usize) -> Option<usize> {
-        if x >= self.width || y >= self.height {
-            return None;
-        }
-
-        Some(y * self.width + x)
-    }
-
     pub fn render(&self) {
         for y in 0..self.height {
             for x in 0..self.width {
@@ -39,27 +30,10 @@ impl Board {
                     print!("#")
                 }
                 else {
-                    print!(".")
+                    print!("-")
                 }
             }
             print!("\n");
-        }
-    }
-
-    pub fn set(&mut self, x: usize, y: usize, value: bool) -> Result<(), String> {
-        match self.index(x, y) {
-            Some(index) => {
-                self.cells[index] = value;
-                Ok(())
-            }
-            None => Err(String::from("cell not found."))
-        }
-    }
-
-    pub fn get(&self, x: usize, y: usize) -> Option<bool> {
-        match self.index(x, y) {
-            Some(index) => Some(self.cells[index]),
-            None => None
         }
     }
 
@@ -95,7 +69,7 @@ impl Board {
         cleared_rows
     }
 
-    pub fn setTetromino(&mut self, tetromino: &Tetromino) -> Result<(), String> {
+    pub fn set_tetromino(&mut self, tetromino: &Tetromino) -> Result<(), String> {
         let shape = tetromino.kind().shape(tetromino.rotation_state());
 
         let leading_empty_columns = shape.leading_empty_columns();
@@ -141,7 +115,7 @@ impl Board {
         Ok(())
     }
 
-    pub fn removeTetromino(&mut self, tetromino: &Tetromino) -> Result<(), String> {
+    pub fn remove_tetromino(&mut self, tetromino: &Tetromino) -> Result<(), String> {
         let shape = tetromino.kind().shape(tetromino.rotation_state());
 
         let leading_empty_columns = shape.leading_empty_columns();
@@ -193,28 +167,28 @@ impl Board {
         dx: isize,
         dy: isize
     ) -> Result<(), String> {
-        self.removeTetromino(&tetromino)?;
+        self.remove_tetromino(&tetromino)?;
         tetromino.move_by(dx, dy);
 
-        match self.setTetromino(&tetromino) {
+        match self.set_tetromino(&tetromino) {
             Ok(()) => Ok(()),
             Err(error) => {
                 tetromino.move_by(-dx,-dy);
-                self.setTetromino(&tetromino); 
+                _ = self.set_tetromino(&tetromino); 
                 Err(error)
             }
         }  
     }
 
     pub fn rotate_tetromino(&mut self, tetromino: &mut Tetromino) -> Result<(), String> {
-        self.removeTetromino(tetromino)?;
+        self.remove_tetromino(tetromino)?;
         tetromino.rotate();
 
-        match self.setTetromino(tetromino) {
+        match self.set_tetromino(tetromino) {
             Ok(()) => Ok(()),
             Err(error) => {
-                tetromino.rotateBack();
-                self.setTetromino(tetromino);
+                tetromino.rotate_back();
+                _ = self.set_tetromino(tetromino);
                 Err(error)
             }
         }
